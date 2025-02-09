@@ -8,6 +8,7 @@ from datetime import datetime
 # Define FAISS storage paths
 FAISS_DB_PATH = "./faiss_index"
 METADATA_PATH = FAISS_DB_PATH + "_metadata.pkl"
+SPECIAL_DELIMITER = "###EVENT###"  # Delimiter for structuring LLM output
 
 def load_vector_store():
     """Loads the FAISS index and metadata."""
@@ -21,56 +22,83 @@ def load_vector_store():
         return None, {}
 
 def get_upcoming_events(current_timestamp):
-    """Uses the LLM to find important upcoming tasks from the vector store."""
+    """Finds upcoming events from journal metadata and queries the LLM."""
     index, metadata = load_vector_store()
     if index is None:
         return {"error": "FAISS database is not initialized."}
 
-    # Convert timestamp to datetime object
+    # Convert timestamp to a comparable date
     try:
-        current_dt = datetime.strptime(current_timestamp, '%Y-%m-%d %H:%M:%S')
+        current_dt = datetime.strptime(current_timestamp, '%Y-%m-%d %H:%M:%S').date()
     except ValueError:
         return {"error": "Invalid timestamp format. Expected 'YYYY-MM-DD HH:MM:SS'."}
 
-    # Retrieve all journal entries from metadata
-    journal_entries = [meta["text"] for meta in metadata.values()]
+    # Filter metadata for future events only
+    upcoming_entries = []
+    for meta in metadata.values():
+        try:
+            entry_date = datetime.strptime(meta["date"], '%Y-%m-%d').date()  # Assuming 'YYYY-MM-DD' format
+            if entry_date > current_dt:  # Check if the event is in the future
+                upcoming_entries.append(f"{SPECIAL_DELIMITER}\nDate: {entry_date.strftime('%b %d')}\nContent: {meta['text']}")
+        except Exception as e:
+            print(f"Skipping entry due to date parsing error: {e}")
 
-    if not journal_entries:
-        return {"error": "No journal entries found in the vector store."}
+    if not upcoming_entries:
+        return {"error": "No upcoming events found in the vector store."}
 
-    # Combine entries into a single context
-    context = "\n\n".join(journal_entries)
+    # Combine filtered entries into context
+    context = "\n\n".join(upcoming_entries)
 
-    # Prompt the LLM to extract relevant upcoming tasks
+    # Your strict event-extraction prompt
     prompt = (
-        "You are a structured assistant that extracts tasks from journal entries. "
-        "Given the journal entries below, find ONLY references to upcoming events(Like exams or projects or meetings), deadlines, or tasks. "
-        "Upcoming events means any event that has a higher value for date than the current time"
-        "Return only a valid JSON list where each object contains:\n"
-        " - 'date': The event's date (e.g., 'Feb 5')\n"
-        " - 'content': A short description of the task\n\n"
-        "Return ONLY a JSON array like this:\n\n"
-        "[\n"
-        "  {\n"
-        '    "date": "Feb 5",\n'
-        '    "content": "You need to revise for your exam"\n'
-        "  },\n"
-        "  {\n"
-        '    "date": "Feb 6",\n'
-        '    "content": "Submit your project report"\n'
-        "  }\n"
-        "]\n\n"
-        f"Context:\n{context}\n\n"
-        "Make sure the response is a valid JSON array with no extra text."
+        "You are a creative assistant that extracts and organizes upcoming events from journal entries.\n"
+        "Given the journal entries below, identify only future events, deadlines, and tasks based on their dates.\n"
+        "Use the following strict formatting:\n"
+        f"1. Each event must be separated by '{SPECIAL_DELIMITER}'.\n"
+        "2. Each event must include:\n"
+        "   - 'Date: [Month Day]'\n"
+        "   - 'Content: [Short event description]'\n\n"
+        "3. The content must be very brief - One sentence at most and one event per date.\n"
+        "4. Events must not include mundane events but only note important events like exams, meetings, deadlines, or reminders to check the progress of new hobbies.\n"
+        "Here is the context of journal entries with future events:\n\n"
+        f"{context}\n\n"
+        "Ensure that the response follows the strict delimiter format without any explanations."
     )
 
-    # Query Llama3 for event extraction
-    response = ollama.chat(model="llama3.2:latest", messages=[{"role": "user", "content": prompt}])
+    # Query Llama3 for structured event extraction
+    response = ollama.chat(model="llama3.2:latest", messages=[{"role": "assistant", "content": prompt}])
 
     # Extract and parse LLM response
     response_text = response["message"]["content"].strip()
 
-    try:
-        return json.loads(response_text)
-    except json.JSONDecodeError:
-        return {"error": "Failed to parse LLM output as JSON.", "raw_response": response_text}
+    return process_event_response(response_text)
+
+def process_event_response(response_text):
+    """Processes the LLM response into a structured list of JSON objects."""
+    events = response_text.split(SPECIAL_DELIMITER)
+    formatted_events = []
+
+    for event in events:
+        event = event.strip()
+        if not event:
+            continue
+
+        # Extract date and content
+        lines = event.split("\n")
+        date, content = None, []
+
+        for line in lines:
+            if line.startswith("Date:"):
+                date = line.replace("Date:", "").strip()
+            elif line.startswith("Content:"):
+                content.append(line.replace("Content:", "").strip())
+            else:
+                content.append(line.strip())
+
+        if date and content:
+            formatted_events.append({
+                "date": date,
+                "content": " ".join(content)  # Keep it in brief format
+            })
+
+    return formatted_events

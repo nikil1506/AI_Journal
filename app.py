@@ -49,7 +49,7 @@ except Exception as e:
     metadata = {}
 
 ### --- API: Query FAISS --- ###
-@app.route('/query_rag', methods=['POST'])
+@app.route('/journal', methods=['POST'])
 def run_query_rag():
     """API endpoint to query FAISS-based RAG and retrieve structured journal summaries."""
     
