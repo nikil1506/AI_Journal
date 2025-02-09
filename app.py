@@ -53,11 +53,13 @@ except Exception as e:
 def run_query_rag():
     """API endpoint to query FAISS-based RAG and retrieve structured journal summaries."""
     
-    query_text="You are my creative writer. Help me write content for my personal journal based on the information I will provide you. You must strictly follow the formattings"  # Default query
+    query_text = "You are my creative writer. Help me write content for my personal journal based on the information I will provide you. You must strictly follow the formatting."
 
-    response = rag_query.similarity_search(query_text)  # Call the FAISS-based RAG function
+    # Use cached data if FAISS hasn't changed
+    response = rag_query.update_cached_rag(query_text)
 
-    return jsonify({"response": response})
+    return jsonify(response)  # Return JSON directly
+
 
 
 ### --- API: Analyze Emotion --- ###
