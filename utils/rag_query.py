@@ -4,13 +4,16 @@ from utils.vector_store import load_existing_faiss
 import ollama
 from langchain_ollama import OllamaEmbeddings
 from sklearn.metrics.pairwise import cosine_similarity
+from utils.sentiment import analyze_sentiment, analyze_emotion  # Importing sentiment functions
 
 # Load FAISS index and metadata
 index, metadata = load_existing_faiss()
-query_text = ("You are my creative writer. Help me write content for my personal journal based on the information I will provide you. You must strictly follow the formattings")
+query_text = "You are my creative writer. Help me write content for my personal journal based on the information I will provide you. You must strictly follow the formatting."
+
+SPECIAL_DELIMITER = "###ENTRY###"  # Special delimiter for separating journal entries
 
 def similarity_search(query_text=query_text, top_k=3):
-    """Performs similarity search instead of FAISS query search and generates structured summaries using Llama3."""
+    """Performs similarity search and generates structured journal entries using Llama3."""
     if index is None:
         return {"error": "FAISS database is not initialized."}
 
@@ -37,48 +40,76 @@ def similarity_search(query_text=query_text, top_k=3):
     # Combine retrieved documents into context
     context = "\n\n".join(retrieved_docs)
     prompt = (
-        "You are a structured assistant that processes journal entries based on what I talked to you. "
-        "Take the provided speech-to-text data and organize them into a content and title. "
-        "Strictly answer in first person. "
-        "Make sure you provide me content for all the different dates in the journal. "
-        "Every new date should have its own set of title and content. "
-        "The Title should be at most 5 words. "
-        "The content should be a brief description of the happenings of whatever happened on that particular day with hints of my emotions you get from the information. "
-        "There must not be any repeated entries for the same date. "
-        "Summary and title must always be present. "
-        "Each entry should include:\n"
-        " - 'title': A short phrase summarizing the day's theme\n"
-        " - 'date': The journal entry's date (e.g., 'Feb 5')\n"
-        " - 'content': The journal text formatted in markdown\n\n"
-        "Return ONLY a valid JSON array, following this format:\n\n"
-        "[\n"
-        "  {\n"
-        '    "title": "Started Exam Prep",\n'
-        '    "date": "Feb 5",\n'
-        '    "content": "Journal is markdown format"\n'
-        "  },\n"
-        "  {\n"
-        '    "title": "Feeling Sick",\n'
-        '    "date": "Feb 6",\n'
-        '    "content": "Journal is markdown format"\n'
-        "  }\n"
-        "]\n\n"
+        "You are a structured assistant that processes journal entries based on what I talked to you.\n"
+        "Take the provided speech-to-text data and organize it into journal entries with a title and content.\n"
+        "Follow these strict formatting rules:\n"
+        "1. Strictly answer in the first person.\n"
+        "2. Every journal entry must be fantasy-themed and overexaggerated.\n"
+        "3. Each entry must have a unique date.\n"
+        "4. The title must be at most 5 words long.\n"
+        "5. The content must be a markdown-formatted brief journal entry.\n"
+        "6. Each entry must be separated by the delimiter: '###ENTRY###'.\n\n"
+        "Return ONLY the following format:\n\n"
+        "###ENTRY###\n"
+        "Title: [Fantasy Themed Title]\n"
+        "Date: [Date]\n"
+        "Content:\n"
+        "[Markdown journal entry]\n"
+        "###ENTRY###\n\n"
         "Here is the context:\n"
         f"{context}\n\n"
-        "Ensure that the JSON structure remains intact and does not contain any explanations or extra text. "
-        "Strip all string escape characters in all fields except content. Content should be a proper markdown. "
-        "The response must only contain characters allowed in a JSON. "
-        "ALL THE ABOVE CONSTRAINTS MUST BE STRICTLY FOLLOWED."
+        "Ensure the JSON structure remains intact, contains no explanations, and strictly follows the above constraints.\n"
+        "The response must only contain characters allowed in a JSON.\n"
     )
 
-    # Query Llama3 for structured summary
+    # Query Llama3 for structured journal entries
     response = ollama.chat(model="llama3.2:latest", messages=[{"role": "user", "content": prompt}])
 
-    # Extract response text and clean it
+    # Extract response text
     response_text = response["message"]["content"].strip()
 
-    # Parse response JSON
-    try:
-        return json.loads(response_text)
-    except json.JSONDecodeError:
-        return {"error": "Failed to parse Llama3 output as JSON.", "raw_response": response_text}
+    # Process the structured response and add mood analysis
+    return process_journal_response(response_text)
+
+def process_journal_response(response_text):
+    """Processes the journal response text into a structured list of JSON objects and appends mood + emoji analysis."""
+    entries = response_text.split(SPECIAL_DELIMITER)
+    formatted_entries = []
+
+    for entry in entries:
+        entry = entry.strip()
+        if not entry:
+            continue
+
+        # Extract title, date, and content
+        lines = entry.split("\n")
+        title, date, content = None, None, []
+        
+        for line in lines:
+            if line.startswith("Title:"):
+                title = line.replace("Title:", "").strip()
+            elif line.startswith("Date:"):
+                date = line.replace("Date:", "").strip()
+            else:
+                content.append(line)
+
+        if title and date and content:
+           
+            text_for_analysis = f"{title}\n" + "\n".join(content)
+
+            # Get Mood + Emoji
+            sentiment_result = analyze_sentiment(text_for_analysis)  # Get sentiment
+            mood_emoji = analyze_emotion(sentiment_result)  # Get mood + emoji
+
+            # Ensure mood and emoji are separated
+            mood, emoji = mood_emoji.split()  # Splits into ["Mood", "Emoji"]
+
+            formatted_entries.append({
+                "title": title,
+                "date": date,
+                "content": "\n".join(content).strip(),
+                "mood": mood,  # Separate mood
+                "emoji": emoji  # Separate emoji
+            })
+
+    return formatted_entries
