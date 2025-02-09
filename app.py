@@ -140,36 +140,39 @@ def recreate_vector_store():
         "message": "FAISS vector store recreated.",
         "processed_files": processed_files
     })
-    
+
 @app.route('/send_content', methods=['POST'])
 def send_content():
-    """API to create/update a journal file based on the provided timestamp and content."""
+    """API to create/update a journal file based on the provided date (YYYY-MM-DD) and content."""
     data = request.get_json()
 
     if not isinstance(data, dict):
         return jsonify({"error": "Invalid format, expected a JSON object"}), 400
 
-    timestamp = data.get("date")
+    date_str = data.get("date")
     content = data.get("content")
 
-    if not timestamp or not content:
+    if not date_str or not content:
         return jsonify({"error": "Missing required fields: 'date' and 'content'"}), 400
 
     # Convert timestamp to YYYY-MM-DD format for file naming
     try:
-        dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+        dt = datetime.strptime(date_str, '%Y-%m-%d')  # Only process YYYY-MM-DD
         file_name = f"{dt.strftime('%Y-%m-%d')}.txt"
         file_path = os.path.join(JOURNAL_DIR, file_name)
     except ValueError:
-        return jsonify({"error": f"Invalid timestamp format: {timestamp}. Expected 'YYYY-MM-DD HH:MM:SS'"}), 400
+        return jsonify({"error": f"Invalid date format: {date_str}. Expected 'YYYY-MM-DD'"}), 400
 
     # Format new entry with timestamp
-    entry_text = f"\n\n{timestamp}\n{content}\n"
+    entry_text = f"\n\n{date_str}\n{content}\n"
 
     # Append content to the file (or create it if it doesn’t exist)
     os.makedirs(JOURNAL_DIR, exist_ok=True)  # Ensure directory exists
     with open(file_path, "a", encoding="utf-8") as file:
         file.write(entry_text)
+
+    # Recreate the FAISS vector store
+    recreate_vector_store()
 
     return jsonify({
         "message": "Journal entry saved successfully.",
