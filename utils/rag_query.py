@@ -70,7 +70,6 @@ def similarity_search_for_date(query_text, date, metadata):
 
     similarity_scores = cosine_similarity(query_embedding, stored_embeddings)[0]
 
-    # Filter for entries with the specific date
     matching_indices = [idx for idx in metadata if metadata[idx]["date"] == date]
     top_k_indices = sorted(matching_indices, key=lambda x: similarity_scores[x], reverse=True)
 
@@ -85,16 +84,16 @@ def similarity_search_for_date(query_text, date, metadata):
         "Take the provided speech-to-text data and organize it into journal entries with a title and content.\n"
         "Follow these strict formatting rules:\n"
         "1. Strictly answer in the first person.\n"
-        "2. Every title entry must be fantasy-themed and overexaggerated while the journal entry must be meaningful.\n"
-        "3. Each entry must have a unique date.\n"
+        "2. Every title entry must be fantasy-themed and overexaggerated while the content must be accurate.\n"
+        "3. Return the date as it is in the prompt.\n"
         "4. The title must be at most 5 words long.\n"
         "5. The content must be a markdown-formatted brief journal entry with a maximum of ONLY 1 sentence.\n"
         "6. Each entry must be separated by the delimiter: '###ENTRY###'.\n"
-        "7. Date should be STRICTLY in YYYY-MM-DD format.\n"
+        "7. Generate a total of 3 such responses ONLY.\n"
         "Return ONLY the following format:\n\n"
         "###ENTRY###\n"
         "Title: [Fantasy Themed Title]\n"
-        "Date: [Date]\n"
+        f"Date: [{date}]\n"
         "Content:\n"
         "[Markdown journal entry]\n"
         "###ENTRY###\n\n"
@@ -104,11 +103,12 @@ def similarity_search_for_date(query_text, date, metadata):
 
     response = ollama.chat(model="llama3.2:latest", messages=[{"role": "user", "content": prompt}])
     response_text = response["message"]["content"].strip()
+    response_date=date
     
-    return process_journal_response(response_text)
+    return process_journal_response(response_text,response_date)
 
-def process_journal_response(response_text):
-    """Processes the journal response text into a structured list of JSON objects and appends mood + emoji analysis."""
+def process_journal_response(response_text, date):
+    """Processes the journal response text into a structured list of JSON objects with mood & emoji analysis."""
     entries = response_text.split(SPECIAL_DELIMITER)
     formatted_entries = []
 
@@ -117,10 +117,9 @@ def process_journal_response(response_text):
         if not entry:
             continue
 
-        # Extract title, date, and content
         lines = entry.split("\n")
-        title, date, content = None, None, []
-        
+        title, date, content = None, date, []
+
         for line in lines:
             if line.startswith("Title:"):
                 title = line.replace("Title:", "").strip()
@@ -130,18 +129,13 @@ def process_journal_response(response_text):
                 content.append(line)
 
         if title and date and content:
-            text_for_analysis = f"{title}\n" + "\n".join(content)
+            full_text = f"{title} {' '.join(content)}"
 
-            # Get Mood + Emoji
-            sentiment_result = analyze_sentiment(text_for_analysis)
+            sentiment_result = analyze_sentiment(full_text)
             mood_emoji = analyze_emotion(sentiment_result)
 
-            # Ensure mood and emoji are separated safely
-            mood_emoji_parts = mood_emoji.split()
-            if len(mood_emoji_parts) == 2:
-                mood, emoji = mood_emoji_parts
-            else:
-                mood, emoji = "Unknown", "❓"
+            # Ensure mood and emoji are separated correctly
+            mood, emoji = mood_emoji.split() if " " in mood_emoji else ("Unknown", "❓")
 
             formatted_entries.append({
                 "title": title,
@@ -154,7 +148,7 @@ def process_journal_response(response_text):
     return formatted_entries
 
 def update_cached_rag(query_text):
-    """Checks FAISS for new dates, updates RAG cache if necessary, and returns the latest data."""
+    """Handles FAISS updates, runs RAG for new entries, and updates the cache with mood & emoji."""
     index, metadata = load_faiss()
     if index is None or metadata is None:
         return {"error": "FAISS database is not initialized."}
@@ -162,21 +156,49 @@ def update_cached_rag(query_text):
     all_dates = get_all_dates(metadata)
     last_cached_date = get_last_cached_date()
 
-    if last_cached_date and all_dates and last_cached_date >= max(all_dates):
-        return load_cached_json()  # No new updates, return cached results
-
-    # Get new dates that need processing
-    new_dates = [date for date in all_dates if last_cached_date is None or date > last_cached_date]
-
     cached_data = load_cached_json()
 
-    for date in new_dates:
-        new_data = similarity_search_for_date(query_text, date, metadata)
+    if last_cached_date is None:
+        # First-time processing: Store all dates and ensure mood & emoji
+        for date in all_dates:
+            new_data = similarity_search_for_date(query_text, date, metadata)
+            if new_data:
+                cached_data.extend(new_data)
+        if all_dates:
+            save_last_cached_date(max(all_dates))
+        save_cached_json(add_mood_to_cached_data(cached_data))
+        return cached_data
+
+    latest_faiss_date = max(all_dates)
+
+    if last_cached_date == latest_faiss_date:
+        cached_data = [entry for entry in cached_data if entry["date"] != latest_faiss_date]
+        new_data = similarity_search_for_date(query_text, latest_faiss_date, metadata)
         if new_data:
             cached_data.extend(new_data)
+        save_cached_json(add_mood_to_cached_data(cached_data))
+        return cached_data
 
-    if new_dates:
-        save_last_cached_date(max(new_dates))  # Update last processed date
-        save_cached_json(cached_data)  # Update cached JSON
+    if last_cached_date < latest_faiss_date:
+        new_data = similarity_search_for_date(query_text, latest_faiss_date, metadata)
+        if new_data:
+            cached_data.extend(new_data)
+            save_last_cached_date(latest_faiss_date)
+            save_cached_json(add_mood_to_cached_data(cached_data))
+        return cached_data
 
+    return cached_data
+
+def add_mood_to_cached_data(cached_data):
+    """Ensures every entry in cached data has mood and emoji."""
+    for entry in cached_data:
+        if "mood" not in entry or "emoji" not in entry:
+            sentiment_result = analyze_sentiment(entry["title"] + " " + entry["content"])
+            mood_emoji = analyze_emotion(sentiment_result)
+
+            # Ensure mood and emoji are separated
+            mood, emoji = mood_emoji.split() if " " in mood_emoji else ("Unknown", "❓")
+
+            entry["mood"] = mood
+            entry["emoji"] = emoji
     return cached_data

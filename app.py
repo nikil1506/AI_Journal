@@ -8,6 +8,7 @@ from langchain_ollama import OllamaEmbeddings
 from utils import sentiment, rag_query
 from utils.vector_store import store_in_vector_db
 from utils.events import get_upcoming_events
+from utils.motivate import generate_motivation
 
 app = Flask(__name__)
 
@@ -157,7 +158,7 @@ def send_content():
     if not date_str or not content:
         return jsonify({"error": "Missing required fields: 'date' and 'content'"}), 400
 
-    # Convert timestamp to YYYY-MM-DD format for file naming
+    # Validate date format
     try:
         dt = datetime.strptime(date_str, '%Y-%m-%d')  # Only process YYYY-MM-DD
         file_name = f"{dt.strftime('%Y-%m-%d')}.txt"
@@ -165,16 +166,21 @@ def send_content():
     except ValueError:
         return jsonify({"error": f"Invalid date format: {date_str}. Expected 'YYYY-MM-DD'"}), 400
 
-    # Format new entry with timestamp
-    entry_text = f"\n\n{date_str}\n{content}\n"
+    # Ensure journal directory exists
+    os.makedirs(JOURNAL_DIR, exist_ok=True)
 
-    # Append content to the file (or create it if it doesn’t exist)
-    os.makedirs(JOURNAL_DIR, exist_ok=True)  # Ensure directory exists
+    # Check if the file already exists
+    if os.path.exists(file_path):
+        print(f"Appending to existing file: {file_path}")
+    else:
+        print(f"Creating new journal file: {file_path}")
+
+    # Append only the content (No timestamps inside the file)
     with open(file_path, "a", encoding="utf-8") as file:
-        file.write(entry_text)
+        file.write(f"\n{content}\n")
 
-    # Recreate the FAISS vector store
-    recreate_vector_store()
+    # Store only the new content in FAISS
+    store_in_vector_db(content, source_file=file_path)
 
     return jsonify({
         "message": "Journal entry saved successfully.",
@@ -195,6 +201,12 @@ def events():
     events_list = get_upcoming_events(current_timestamp)
 
     return jsonify(events_list)
+
+@app.route('/motivate_me', methods=['POST'])
+def motivate_me():
+    """API endpoint to generate a motivational quote based on achievements."""
+    motivation = generate_motivation()
+    return jsonify({"text": motivation})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

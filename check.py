@@ -1,5 +1,19 @@
-from langchain_ollama import OllamaEmbeddings
+import pickle
 
-embeddings = OllamaEmbeddings(model="llama3.2:latest", base_url="http://localhost:11666")
-test_embedding = embeddings.embed_query("Hello, world!")
-print(f"Test embedding dimension: {len(test_embedding)}")  # Should print 3072
+METADATA_PATH = "./faiss_index_metadata.pkl"  # Adjust path if necessary
+
+try:
+    with open(METADATA_PATH, "rb") as f:
+        metadata = pickle.load(f)
+
+    # Display number of entries
+    print(f"Total Metadata Entries: {len(metadata)}")
+
+    # Print metadata details
+    for key, value in metadata.items():
+        print(f"ID: {key}")
+        print(f"Source: {value.get('source', 'N/A')}")
+        print(f"Date: {value.get('date', 'N/A')}")
+        print(f"Text Preview: {value.get('text', '')[:100]}...\n")
+except Exception as e:
+    print(f"Error: {e}")

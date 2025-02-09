@@ -1,0 +1,128 @@
+[
+    {
+        "title": "Woke Up Late Again",
+        "date": "2025-02-04",
+        "content": "Content:\nI woke up late, again, and need to fix this before the week starts.",
+        "mood": "Embarrassment",
+        "emoji": "\ud83e\udd26"
+    },
+    {
+        "title": "Exam Anxiety Strikes",
+        "date": "2025-02-04",
+        "content": "Content:\nThis exam is haunting me and I've made some progress on practice problems, but not enough.",
+        "mood": "Worry",
+        "emoji": "\ud83d\ude1f"
+    },
+    {
+        "title": "Procrastination Overload",
+        "date": "2025-02-04",
+        "content": "Content:\nI'm struggling to focus and procrastinate is taking over, making it hard for me to study and work out.",
+        "mood": "Shame",
+        "emoji": "\ud83d\ude14"
+    },
+    {
+        "title": "Dragon's Hoard of Procrastination",
+        "date": "2025-02-03",
+        "content": "Content:\nWoke up late, again, and my sleep schedule is officially ruined due to excessive snoozing and a lack of motivation.",
+        "mood": "Embarrassment",
+        "emoji": "\ud83d\ude33"
+    },
+    {
+        "title": "The Lost City of Studying",
+        "date": "2025-02-03",
+        "content": "Content:\nMade coffee, grabbed a bagel, and thought about making eggs but was too lazy; started reviewing OS notes and feeling behind, but at least I'm doing something productive.",
+        "mood": "Resignation",
+        "emoji": "\ud83d\ude4f"
+    },
+    {
+        "title": "The Cursed Temple of Productivity",
+        "date": "2025-02-03",
+        "content": "Content:\nTook a break from studying to scroll through social media, watched random YouTube videos for too long, checked emails, and saw another OS exam reminder, which activated my anxiety; now I'm trying to force myself back into studying mode.",
+        "mood": "Shame",
+        "emoji": "\ud83d\ude14"
+    },
+    {
+        "title": "Coffee Fuels My Soul",
+        "date": "2025-02-02",
+        "content": "Content:\nI'm running on caffeine and granola bars for breakfast, as my sleep schedule has become a distant memory.",
+        "mood": "Happiness",
+        "emoji": "\ud83d\ude0a"
+    },
+    {
+        "title": "The Struggle Is Real",
+        "date": "2025-02-02",
+        "content": "Content:\nMy discipline is crumbling, and I'm struggling to stay focused, whether it's studying or working out \u2013 everything feels like a chore.",
+        "mood": "Embarrassment",
+        "emoji": "\ud83d\ude33"
+    },
+    {
+        "title": "FIFA Nights Save Me",
+        "date": "2025-02-02",
+        "content": "Content:\nI found solace in FIFA night with friends, where I could momentarily escape the chaos of student life and indulge in some friendly competition.",
+        "mood": "Joy",
+        "emoji": "\ud83d\ude0a"
+    },
+    {
+        "title": "The Calculus of Doom",
+        "date": "2025-02-06",
+        "content": "Content: I need to review the differential equations and integral calculus for my upcoming math exam.",
+        "mood": "Anxiety",
+        "emoji": "\ud83d\ude2c"
+    },
+    {
+        "title": "The Fear of Failure",
+        "date": "2025-02-06",
+        "content": "Content: Staying motivated is crucial for achieving academic success, so I must prioritize my study schedule today.",
+        "mood": "Fear",
+        "emoji": "\ud83d\ude2c"
+    },
+    {
+        "title": "The Weight of Procrastination",
+        "date": "2025-02-06",
+        "content": "Content: Putting off studying until the last minute will only lead to a poorer understanding of the material and reduced grades.",
+        "mood": "Disappointment",
+        "emoji": "\ud83d\ude10"
+    },
+    {
+        "title": "The Great Project Convergence",
+        "date": "2025-02-07",
+        "content": "Content: |\nI need to review the project updates and ensure I'm familiar with the current status before the meeting.",
+        "mood": "Calmness",
+        "emoji": "\ud83d\ude0c"
+    },
+    {
+        "title": "Gathering Magical Project Knowledge",
+        "date": "2025-02-07",
+        "content": "Content: |\nI should organize my notes and research on the topic to refresh my memory and make better connections during the discussion.",
+        "mood": "Confidence",
+        "emoji": "\ud83d\udcaa"
+    },
+    {
+        "title": "Summoning Productivity Powers",
+        "date": "2025-02-07",
+        "content": "Content: |\nI'll focus on prioritizing tasks, allocating sufficient time for each activity, and managing my time efficiently to achieve a productive outcome.",
+        "mood": "Pride",
+        "emoji": "\ud83d\udcaa"
+    },
+    {
+        "title": "My Quest for Research Success",
+        "date": "2025-02-09",
+        "content": "Content:\n|I must prepare my research report ASAP to ensure its accuracy and clarity.|",
+        "mood": "Determination",
+        "emoji": "\ud83d\udcaa"
+    },
+    {
+        "title": "The Pressure is Mounting",
+        "date": "2025-02-09",
+        "content": "Content:\n|My presentation next week is crucial, and I need to finalize all the details to avoid last-minute stress.|",
+        "mood": "Anxiety",
+        "emoji": "\ud83d\ude2c"
+    },
+    {
+        "title": "Countdown to Research Day",
+        "date": "2025-02-09",
+        "content": "Content:\n|With only a few days left before my research presentation, I am feeling anxious about delivering high-quality results within the given time frame.",
+        "mood": "Shame",
+        "emoji": "\ud83e\udd15"
+    }
+]
