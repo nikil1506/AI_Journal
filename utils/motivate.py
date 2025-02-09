@@ -2,9 +2,23 @@ import json
 import os
 import ollama
 import time
+import random
 from utils.sentiment import analyze_sentiment
 
 CACHE_FILE = "./cached_rag.json"
+
+motivational_messages = [
+    "Keep pushing forward! Every step you take brings you closer to success.",
+    "Believe in yourself! You are stronger than you think.",
+    "Great things take time. Keep going, and you’ll get there!",
+    "Every challenge you overcome makes you stronger and wiser.",
+    "Stay positive, work hard, and make it happen!",
+    "Difficult roads often lead to beautiful destinations.",
+    "Success is the sum of small efforts, repeated day in and day out.",
+    "Your only limit is your mind. Stay focused and push through!",
+    "Dream big, work hard, stay focused, and surround yourself with good people.",
+    "Every setback is a setup for a comeback. Keep moving forward!"
+]
 
 def load_cached_rag():
     """Loads the cached RAG responses without modifying them."""
@@ -33,9 +47,9 @@ def generate_motivation():
 
     # Find the first achievement within 10 seconds
     for entry in cached_data:
-        if time.time() - start_time > 10:
-            print("Search timed out. Returning default message.")
-            return "Keep pushing forward! Every step you take brings you closer to success."
+        if time.time() - start_time > 5:
+            print("Search timed out. Returning a random motivational message.")
+            return random.choice(motivational_messages)
 
         sentiment = analyze_sentiment(entry["content"])
         if sentiment in ["Proud", "Accomplished", "Successful", "Happy", "Motivated"]:

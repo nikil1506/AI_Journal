@@ -105,24 +105,24 @@
         "emoji": "\ud83d\udcaa"
     },
     {
-        "title": "My Quest for Research Success",
+        "title": "The Great Research Countdown",
         "date": "2025-02-09",
-        "content": "Content:\n|I must prepare my research report ASAP to ensure its accuracy and clarity.|",
-        "mood": "Determination",
-        "emoji": "\ud83d\udcaa"
+        "content": "Content: |\nI have a presentation at work next week and my research isn't complete yet, I need to finalize everything ASAP.",
+        "mood": "Disappointment",
+        "emoji": "\ud83d\ude14"
     },
     {
-        "title": "The Pressure is Mounting",
+        "title": "Dragon's Breath of Productivity",
         "date": "2025-02-09",
-        "content": "Content:\n|My presentation next week is crucial, and I need to finalize all the details to avoid last-minute stress.|",
+        "content": "Content: |\nMy research is due soon and I'm still waiting on the last data points from our team lead, which is throwing off my entire timeline.",
+        "mood": "Frustration",
+        "emoji": "\ud83d\ude20"
+    },
+    {
+        "title": "Wizard's Spell of Preparation",
+        "date": "2025-02-09",
+        "content": "Content: |\nI've been working non-stop to prepare for my presentation, but I need to review and edit my slides one more time to ensure everything looks perfect.",
         "mood": "Anxiety",
         "emoji": "\ud83d\ude2c"
-    },
-    {
-        "title": "Countdown to Research Day",
-        "date": "2025-02-09",
-        "content": "Content:\n|With only a few days left before my research presentation, I am feeling anxious about delivering high-quality results within the given time frame.",
-        "mood": "Shame",
-        "emoji": "\ud83e\udd15"
     }
 ]
