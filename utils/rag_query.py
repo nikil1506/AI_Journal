@@ -47,7 +47,7 @@ def similarity_search(query_text=query_text, top_k=3):
         "2. Every journal entry must be fantasy-themed and overexaggerated.\n"
         "3. Each entry must have a unique date.\n"
         "4. The title must be at most 5 words long.\n"
-        "5. The content must be a markdown-formatted brief journal entry.\n"
+        "5. The content must be a markdown-formatted brief journal entry with a maximum of 4 to 5 sentences\n"
         "6. Each entry must be separated by the delimiter: '###ENTRY###'.\n\n"
         "Return ONLY the following format:\n\n"
         "###ENTRY###\n"

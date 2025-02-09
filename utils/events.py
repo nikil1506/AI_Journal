@@ -29,16 +29,18 @@ def get_upcoming_events(current_timestamp):
 
     # Convert timestamp to a comparable date
     try:
-        current_dt = datetime.strptime(current_timestamp, '%Y-%m-%d %H:%M:%S').date()
+    # Convert current timestamp to a datetime object and then extract the date
+        current_dt = datetime.strptime(current_timestamp.split('.')[0], '%Y-%m-%d %H:%M:%S').date()
     except ValueError:
-        return {"error": "Invalid timestamp format. Expected 'YYYY-MM-DD HH:MM:SS'."}
+        return {"error": "Invalid timestamp format. Expected 'YYYY-MM-DD HH:MM:SS' or 'YYYY-MM-DD HH:MM:SS.ssssss'."}
+
 
     # Filter metadata for future events only
     upcoming_entries = []
     for meta in metadata.values():
         try:
-            entry_date = datetime.strptime(meta["date"], '%Y-%m-%d').date()  # Assuming 'YYYY-MM-DD' format
-            if entry_date > current_dt:  # Check if the event is in the future
+            entry_date = datetime.strptime(meta["date"], '%Y-%m-%d').date()  # Ensure entry_date is also a date
+            if entry_date >= current_dt:  # Now both are date objects, comparison is valid
                 upcoming_entries.append(f"{SPECIAL_DELIMITER}\nDate: {entry_date.strftime('%b %d')}\nContent: {meta['text']}")
         except Exception as e:
             print(f"Skipping entry due to date parsing error: {e}")
@@ -50,6 +52,7 @@ def get_upcoming_events(current_timestamp):
     context = "\n\n".join(upcoming_entries)
 
     # Your strict event-extraction prompt
+    print("prompt Reached")
     prompt = (
         "You are a creative assistant that extracts and organizes upcoming events from journal entries.\n"
         "Given the journal entries below, identify only future events, deadlines, and tasks based on their dates.\n"
@@ -66,7 +69,7 @@ def get_upcoming_events(current_timestamp):
     )
 
     # Query Llama3 for structured event extraction
-    response = ollama.chat(model="llama3.2:latest", messages=[{"role": "assistant", "content": prompt}])
+    response = ollama.chat(model="llama3.2:latest", messages=[{"role": "user", "content": prompt}])
 
     # Extract and parse LLM response
     response_text = response["message"]["content"].strip()
